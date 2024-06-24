@@ -1,18 +1,34 @@
-#include <libopencm3/stm32/rcc.h>
-#include <libopencm3/stm32/gpio.h>
+#include <stdint.h>
+
+#define RCC_BASE 0x40021000
+#define GPIOC_BASE 0x40011000
+
+uint32_t *RCC_APB2ENR = (uint32_t *)(RCC_BASE + 0x18);
+uint32_t *GPIOC_CFGR = (uint32_t *)(GPIOC_BASE + 0x04);
+uint32_t *GPIOC_ODR = (uint32_t *)(GPIOC_BASE + 0x0C);
+
+uint32_t GPIOC_MODE_2MHZ_BIT = (2 << 20);
+uint32_t GPIOC_PUSH_PULL_OUTPUT_BIT = (0 << 22);
 
 int main(void) {
-    rcc_periph_clock_enable(RCC_GPIOC);
-    gpio_set_mode(GPIOC,
-                  GPIO_MODE_OUTPUT_2_MHZ,
-                  GPIO_CNF_OUTPUT_PUSHPULL,
-                  GPIO13);
 
-    while(1){
-        for(int i = 0; i<1000000; i++){
-            __asm__("nop");
-        }
-        gpio_toggle(GPIOC,GPIO13);
-    }
+  /* SET GPIO-C ENBALBE CLOCK BIT */
+  *RCC_APB2ENR |= (1 << 4);
+  // RESET
+  *GPIOC_CFGR &= ~((0 << 20) | (0 < 22));
+  *GPIOC_CFGR |= GPIOC_MODE_2MHZ_BIT | GPIOC_PUSH_PULL_OUTPUT_BIT;
 
+  while (1) {
+    /* set GPIOC13 to 0 */
+    *GPIOC_ODR &= ~(1 << 13)
+    ;
+    for (int i = 0; i < 1000000; i++)
+      __asm__("nop");
+
+    /* set GPIOC13 to 1 */
+    *GPIOC_ODR |= (1 << 13);
+
+    for (int i = 0; i < 1000000; i++)
+      __asm__("nop");
+  }
 }
